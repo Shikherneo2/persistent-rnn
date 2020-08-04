@@ -238,7 +238,7 @@ def BuildEnvironment():
         default_cuda_arch = os.environ['CUDA_ARCH']
 
     vars.Add(EnumVariable('cuda_arch', 'Cuda architecture', default_cuda_arch,
-        allowed_values = ('sm_30', 'sm_35', 'sm_50', 'sm_52')))
+        allowed_values = ('sm_30', 'sm_35', 'sm_50', 'sm_52', 'sm_75')))
 
     # create an Environment
     env = OldEnvironment(ENV = importEnvironment(), \
