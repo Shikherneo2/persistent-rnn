@@ -116,8 +116,7 @@ std::unique_ptr<CudnnRNNDescriptor> createRnnDescriptor(const RecurrentOpsHandle
 std::unique_ptr<CudnnFilterConstViewDescriptor> getFilterDescriptor(
     const matrix::ConstDynamicView& view)
 {
-    return std::make_unique<CudnnFilterConstViewDescriptor>(view.data<void>(), view.size(),
-        view.precision());
+    return std::make_unique<CudnnFilterConstViewDescriptor>( view.data<void>(), view.size(),view.precision() );
 }
 
 std::unique_ptr<CudnnFilterViewDescriptor> getFilterDescriptor(const matrix::DynamicView& view)

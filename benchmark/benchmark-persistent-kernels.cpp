@@ -23,8 +23,7 @@
 #include <random>
 #include <iostream>
 
-static double getFlopCount(prnn::RecurrentOpsHandle& handle)
-{
+static double getFlopCount(prnn::RecurrentOpsHandle& handle){
     return 2.0 * handle.layerSize * handle.layerSize * handle.miniBatchSize * handle.timesteps;
 }
 
@@ -32,7 +31,7 @@ void benchmarkRnnForward(size_t iterations, size_t layerSize, size_t miniBatchSi
     size_t timesteps, size_t layers, prnn::RecurrentLayerBackend backend,
     const prnn::matrix::Precision& precision) {
 
-    auto weights       = prnn::matrix::rand({layerSize, layerSize               }, precision);
+    auto weights       = prnn::matrix::rand({layerSize, layerSize}, precision);
     auto activations   = prnn::matrix::rand({layerSize, miniBatchSize, timesteps}, precision);
     auto inActivations = prnn::matrix::rand({layerSize, miniBatchSize, timesteps}, precision);
 
@@ -85,9 +84,9 @@ void benchmarkRnnForward(size_t iterations, size_t layerSize, size_t miniBatchSi
 
 void benchmarkRnnReverse(size_t iterations, size_t layerSize, size_t miniBatchSize,
     size_t timesteps, size_t layers, prnn::RecurrentLayerBackend backend,
-    const prnn::matrix::Precision& precision)
-{
-    auto weights     = prnn::matrix::rand({layerSize, layerSize               }, precision);
+    const prnn::matrix::Precision& precision){
+
+    auto weights     = prnn::matrix::rand({layerSize, layerSize}, precision);
     auto activations = prnn::matrix::rand({layerSize, miniBatchSize, timesteps}, precision);
     auto deltas      = prnn::matrix::rand({layerSize, miniBatchSize, timesteps}, precision);
     auto outDeltas   = prnn::matrix::rand({layerSize, miniBatchSize, timesteps}, precision);
@@ -142,9 +141,9 @@ void benchmarkRnnReverse(size_t iterations, size_t layerSize, size_t miniBatchSi
 
 void benchmarkRnnGradients(size_t iterations, size_t layerSize, size_t miniBatchSize,
     size_t timesteps, size_t layers, prnn::RecurrentLayerBackend backend,
-    const prnn::matrix::Precision& precision)
-{
-    auto weights     = prnn::matrix::rand({layerSize, layerSize               }, precision);
+    const prnn::matrix::Precision& precision){
+
+    auto weights     = prnn::matrix::rand({layerSize, layerSize}, precision);
     auto activations = prnn::matrix::rand({layerSize, miniBatchSize, timesteps}, precision);
     auto deltas      = prnn::matrix::rand({layerSize, miniBatchSize, timesteps}, precision);
 
@@ -200,25 +199,20 @@ void benchmarkRnnGradients(size_t iterations, size_t layerSize, size_t miniBatch
 
 void runBenchmark(size_t iterations, size_t layerSize, size_t miniBatchSize,
     size_t timesteps, size_t layers, prnn::RecurrentLayerBackend backend,
-    prnn::matrix::Precision& precision)
-{
+    prnn::matrix::Precision& precision){
     benchmarkRnnForward(  iterations, layerSize, miniBatchSize, timesteps, layers, backend, precision);
     benchmarkRnnReverse(  iterations, layerSize, miniBatchSize, timesteps, layers, backend, precision);
     benchmarkRnnGradients(iterations, layerSize, miniBatchSize, timesteps, layers, backend, precision);
 }
 
-prnn::RecurrentLayerBackend getBackend(const std::string& backend)
-{
-    if(backend == "persistent")
-    {
+prnn::RecurrentLayerBackend getBackend(const std::string& backend){
+    if(backend == "persistent"){
         return prnn::RECURRENT_PERSISTENT_BACKEND;
     }
-    else if(backend == "cudnn")
-    {
+    else if(backend == "cudnn"){
         return prnn::RECURRENT_CUDNN_BACKEND;
     }
-    else if(backend == "best")
-    {
+    else if(backend == "best"){
         return prnn::RECURRENT_BEST_BACKEND;
     }
 
@@ -231,13 +225,13 @@ int main(int argc, char** argv) {
 
     prnn::matrix::Precision precision = prnn::matrix::SinglePrecision();
 
-    size_t iterations     = 20;
+    size_t iterations     = 40;
     size_t layerSize      = prnn::rnn::getMaximumSizeRNNForThisGPU(precision);
-    size_t miniBatcheSize = 2;
+    size_t miniBatcheSize = 6;
     size_t timesteps      = 64;
     size_t layers         = 1;
 
-    std::string backend;
+    std::string backend = "persistent";
 
     parser.parse("-i", "--iterations",      iterations,     iterations,     "Iterations to run each recurrent operation.");
     parser.parse("-l", "--layer-size",      layerSize,      layerSize,      "The size of the recurrent layer.");
@@ -250,8 +244,5 @@ int main(int argc, char** argv) {
 
     prnn::util::enable_log("RecurrentOperations::Detail");
 
-    runBenchmark(iterations, layerSize, miniBatcheSize, timesteps, layers,
-        getBackend(backend), precision);
+    runBenchmark(iterations, layerSize, miniBatcheSize, timesteps, layers, getBackend(backend), precision);
 }
-
-

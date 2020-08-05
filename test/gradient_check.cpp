@@ -1,5 +1,3 @@
-
-
 // Persistent RNN Includes
 #include <persistent_rnn_high_level.h>
 #include <persistent_rnn.h>

@@ -92,7 +92,8 @@ CudnnFilterConstViewDescriptor::CudnnFilterConstViewDescriptor(const void* data,
 
     std::vector<int> sizes(size.begin(), size.end());
 
-    CudnnLibrary::cudnnSetFilterNdDescriptor(_descriptor,
+    CudnnLibrary::cudnnSetFilterNdDescriptor(
+			  _descriptor,
         getCudnnDataType(precision),
         CudnnLibrary::CUDNN_TENSOR_NCHW,
         sizes.size(),
@@ -160,7 +161,7 @@ CudnnFilterViewDescriptor::CudnnFilterViewDescriptor(void* data, const Dimension
 
     CudnnLibrary::cudnnSetFilterNdDescriptor(_descriptor,
         getCudnnDataType(precision),
-        CudnnLibrary::CUDNN_TENSOR_NCHW,
+        CudnnLibrary::CUDNN_TENSOR_NHWC,
         sizes.size(),
         sizes.data());
 }
@@ -717,9 +718,7 @@ cudnnPoolingDescriptor_t CudnnPooling2dDescriptor::descriptor() const
     return _descriptor;
 }
 
-CudnnRNNDescriptor::CudnnRNNDescriptor(int hiddenSize, int numLayers, int inputMode,
-    int direction, int mode, int dataType)
-: _descriptor(nullptr), _dropoutDescriptor(nullptr)
+CudnnRNNDescriptor::CudnnRNNDescriptor(int hiddenSize, int numLayers, int inputMode,int direction, int mode, int dataType): _descriptor(nullptr), _dropoutDescriptor(nullptr)
 {
     CudnnLibrary::cudnnCreateDropoutDescriptor(&_dropoutDescriptor);
 
@@ -730,14 +729,17 @@ CudnnRNNDescriptor::CudnnRNNDescriptor(int hiddenSize, int numLayers, int inputM
                                             0);
 
     CudnnLibrary::cudnnCreateRNNDescriptor(&_descriptor);
-
-    CudnnLibrary::cudnnSetRNNDescriptor(_descriptor,
+		
+    CudnnLibrary::cudnnSetRNNDescriptor(
+			  CudnnLibrary::_interface.getHandle(),
+			 _descriptor,
         hiddenSize,
         numLayers,
         _dropoutDescriptor,
         static_cast<CudnnLibrary::cudnnRNNInputMode_t>(inputMode),
         static_cast<CudnnLibrary::cudnnDirectionMode_t>(direction),
         static_cast<CudnnLibrary::cudnnRNNMode_t>(mode),
+				0,
         static_cast<CudnnLibrary::cudnnDataType_t>(dataType));
 }
 

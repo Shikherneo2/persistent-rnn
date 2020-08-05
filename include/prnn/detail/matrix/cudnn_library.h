@@ -197,7 +197,7 @@ public:
                                            cudnnDataType_t dataType, // image data type
                                            cudnnTensorFormat_t format,
                                            int dims,
-                                           int* sizes);
+                                           const int sizes[]);
 
     static void cudnnGetFilterNdDescriptor(const cudnnFilterDescriptor_t wDesc,
                                            int nbDimsRequested,
@@ -370,19 +370,25 @@ public:
                                           void* states,
                                           size_t stateSizeInBytes,
                                           unsigned long long seed);
+private:
+    typedef struct cudnnContext* cudnnHandle_t;
 
 public:
     static void cudnnCreateRNNDescriptor(cudnnRNNDescriptor_t* rnnDesc);
     static void cudnnDestroyRNNDescriptor(cudnnRNNDescriptor_t rnnDesc);
 
-    static void cudnnSetRNNDescriptor(cudnnRNNDescriptor_t rnnDesc,
-                                      int hiddenSize,
-                                      int numLayers,
-                                      cudnnDropoutDescriptor_t dropoutDesc,
-                                      cudnnRNNInputMode_t inputMode,
-                                      cudnnDirectionMode_t direction,
-                                      cudnnRNNMode_t mode,
-                                      cudnnDataType_t dataType);
+    static void cudnnSetRNNDescriptor(
+																				 cudnnHandle_t handle,
+																				 cudnnRNNDescriptor_t rnnDesc,
+                                         int hiddenSize,
+                                         int numLayers,
+                                         cudnnDropoutDescriptor_t dropoutDesc,
+                                         cudnnRNNInputMode_t inputMode,
+                                         cudnnDirectionMode_t direction,
+                                         cudnnRNNMode_t mode,
+																				 int cudnn_algo,
+                                         cudnnDataType_t dataType);
+			
 
 public:
     static void cudnnGetRNNWorkspaceSize(const cudnnRNNDescriptor_t rnnDesc,
@@ -490,7 +496,7 @@ private:
     static void _check();
 
 private:
-    typedef struct cudnnContext* cudnnHandle_t;
+    // typedef struct cudnnContext* cudnnHandle_t;
 
     class Interface
     {
@@ -553,7 +559,7 @@ private:
                                                     cudnnDataType_t dataType, // image data type
                                                     cudnnTensorFormat_t format,
                                                     int dims,
-                                                    int* sizes);
+                                                    const int sizes[]);
 
         cudnnStatus_t (*cudnnGetFilterNdDescriptor)(const cudnnFilterDescriptor_t wDesc,
                                                     int nbDimsRequested,
@@ -738,13 +744,16 @@ private:
         cudnnStatus_t (*cudnnCreateRNNDescriptor)(cudnnRNNDescriptor_t* rnnDesc);
         cudnnStatus_t (*cudnnDestroyRNNDescriptor)(cudnnRNNDescriptor_t rnnDesc);
 
-        cudnnStatus_t (*cudnnSetRNNDescriptor)(cudnnRNNDescriptor_t rnnDesc,
+        cudnnStatus_t (*cudnnSetRNNDescriptor)(
+																							 cudnnHandle_t handle,
+																							 cudnnRNNDescriptor_t rnnDesc,
                                                int hiddenSize,
                                                int numLayers,
                                                cudnnDropoutDescriptor_t dropoutDesc,
                                                cudnnRNNInputMode_t inputMode,
                                                cudnnDirectionMode_t direction,
                                                cudnnRNNMode_t mode,
+																							 int rnn_algo,
                                                cudnnDataType_t dataType);
 
     public:
@@ -883,7 +892,7 @@ private:
         cudnnHandle_t _handle;
     };
 
-private:
+public:
     static Interface _interface;
 
 };

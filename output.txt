@@ -1,0 +1,16 @@
+scons: Reading SConscript files ...
+Building NVCC tool
+Installing Persistent RNN Kernels
+scons: done reading SConscript files.
+scons: Building targets ...
+g++ -o .debug_build/src/detail/matrix/cudnn_library.os -c -g -Wall -Werror -std=c++11 -fPIC -I/usr/local/cuda-10.0/include -I.debug_build/include -Iinclude src/detail/matrix/cudnn_library.cpp
+src/detail/matrix/cudnn_library.cpp: In static member function 'static void prnn::matrix::CudnnLibrary::cudnnSetRNNDescriptor(cudnnRNNDescriptor_t, int, int, cudnnDropoutDescriptor_t, prnn::matrix::CudnnLibrary::cudnnRNNInputMode_t, prnn::matrix::CudnnLibrary::cudnnDirectionMode_t, prnn::matrix::CudnnLibrary::cudnnRNNMode_t, prnn::matrix::CudnnLibrary::cudnnDataType_t)':
+src/detail/matrix/cudnn_library.cpp:774:63: error: cannot convert 'prnn::matrix::CudnnLibrary::cudnnHandle_t {aka prnn::matrix::cudnnContext*}' to 'cudnnRNNDescriptor_t {aka cudnnRNNStruct*}' in argument passing
+                                                       dataType);
+                                                               ^
+In file included from src/detail/matrix/cudnn_library.cpp:9:0:
+include/prnn/detail/matrix/cudnn_library.h:493:20: note: class type 'prnn::matrix::cudnnContext' is incomplete
+     typedef struct cudnnContext* cudnnHandle_t;
+                    ^~~~~~~~~~~~
+scons: *** [.debug_build/src/detail/matrix/cudnn_library.os] Error 1
+scons: building terminated because of errors.

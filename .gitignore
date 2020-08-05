@@ -1,3 +1,5 @@
+benchmark/*
+*/build/*
 .debug_build/*
 .release_build/*
 *.dblite

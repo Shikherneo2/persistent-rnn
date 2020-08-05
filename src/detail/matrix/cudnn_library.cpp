@@ -197,16 +197,15 @@ void CudnnLibrary::cudnnSetFilterNdDescriptor(cudnnFilterDescriptor_t filterDesc
                                    cudnnDataType_t dataType, // image data type
                                    cudnnTensorFormat_t format,
                                    int dims,
-                                   int* sizes)
+                                   const int sizes[])
 {
     _check();
-
-    auto status = (*_interface.cudnnSetFilterNdDescriptor)(filterDesc, dataType, format, dims, sizes);
+		const int ff[] = {384,384};
+    auto status = (*_interface.cudnnSetFilterNdDescriptor)(filterDesc, dataType, format, dims, ff);
 
     if(status != CUDNN_STATUS_SUCCESS)
     {
-        throw std::runtime_error("cudnnSetFilterNdDescriptor failed: " +
-            _interface.getErrorString(status));
+        throw std::runtime_error("cudnnSetFilterNdDescriptor failed: " +_interface.getErrorString(status));
     }
 }
 
@@ -739,26 +738,40 @@ void CudnnLibrary::cudnnDestroyRNNDescriptor(cudnnRNNDescriptor_t rnnDesc)
     }
 }
 
-void CudnnLibrary::cudnnSetRNNDescriptor(cudnnRNNDescriptor_t rnnDesc,
+void CudnnLibrary::cudnnSetRNNDescriptor(cudnnHandle_t handle,
+																				 cudnnRNNDescriptor_t rnnDesc,
                                          int hiddenSize,
                                          int numLayers,
                                          cudnnDropoutDescriptor_t dropoutDesc,
                                          cudnnRNNInputMode_t inputMode,
                                          cudnnDirectionMode_t direction,
                                          cudnnRNNMode_t mode,
-                                         cudnnDataType_t dataType)
+																				 int cudnn_algo,
+                                         cudnnDataType_t dataType )
 {
     _check();
-
-    auto status = (*_interface.cudnnSetRNNDescriptor)(rnnDesc,
+		
+		// cudnn _v5
+    // auto status = (*_interface.cudnnSetRNNDescriptor)(rnnDesc,
+    //                                                   hiddenSize,
+    //                                                   numLayers,
+    //                                                   dropoutDesc,
+    //                                                   inputMode,
+    //                                                   direction,
+    //                                                   mode,
+    //                                                   dataType);
+		// cudnn _v6
+		auto status = (*_interface.cudnnSetRNNDescriptor)(
+																											handle,
+																											rnnDesc,
                                                       hiddenSize,
                                                       numLayers,
                                                       dropoutDesc,
                                                       inputMode,
                                                       direction,
                                                       mode,
+																											cudnn_algo,
                                                       dataType);
-
     if(status != CUDNN_STATUS_SUCCESS)
     {
         throw std::runtime_error("cudnnSetRNNDescriptor failed: " +
