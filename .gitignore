@@ -1,3 +1,5 @@
+.debug_build/*
+.release_build/*
 *.dblite
 *.pyc
 build_local/*

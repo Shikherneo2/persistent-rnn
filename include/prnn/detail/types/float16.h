@@ -1,7 +1,7 @@
 #pragma once
 
 #include <prnn/detail/parallel/cuda.h>
-
+#include <cuda_fp16.h>
 #include <cstdint>
 #include <ostream>
 #include <istream>
