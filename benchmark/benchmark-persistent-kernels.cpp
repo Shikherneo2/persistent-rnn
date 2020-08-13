@@ -1,4 +1,3 @@
-
 // Persistent RNN Includes
 #include <persistent_rnn_high_level.h>
 
@@ -31,21 +30,24 @@ void benchmarkRnnForward(size_t iterations, size_t layerSize, size_t miniBatchSi
     size_t timesteps, size_t layers, prnn::RecurrentLayerBackend backend,
     const prnn::matrix::Precision& precision) {
 
-    auto weights       = prnn::matrix::rand({layerSize, layerSize}, precision);
+    auto weights       = prnn::matrix::rand({1, layerSize, layerSize}, precision);
     auto activations   = prnn::matrix::rand({layerSize, miniBatchSize, timesteps}, precision);
     auto inActivations = prnn::matrix::rand({layerSize, miniBatchSize, timesteps}, precision);
-
+    
+    
     prnn::RecurrentOpsHandle handle(layerSize, miniBatchSize, timesteps, layers,
         prnn::RecurrentRectifiedLinear(),
         prnn::RECURRENT_FORWARD,
         prnn::RECURRENT_SIMPLE_TYPE,
         prnn::RECURRENT_SKIP_INPUT,
         backend);
-
+				
+    std::cout<<"Getting scratch size"<<std::endl;
     auto scratch = prnn::rnn::getForwardPropScratch(handle, precision);
     auto reserve = prnn::createReserveRecurrent(handle, precision);
 
-    // warm up
+    // Warm up
+    std::cout<<"Warming up"<<std::endl;
     prnn::rnn::forwardPropRecurrent(
         prnn::matrix::DynamicView(activations),
         prnn::matrix::ConstDynamicView(inActivations),
@@ -201,8 +203,8 @@ void runBenchmark(size_t iterations, size_t layerSize, size_t miniBatchSize,
     size_t timesteps, size_t layers, prnn::RecurrentLayerBackend backend,
     prnn::matrix::Precision& precision){
     benchmarkRnnForward(  iterations, layerSize, miniBatchSize, timesteps, layers, backend, precision);
-    benchmarkRnnReverse(  iterations, layerSize, miniBatchSize, timesteps, layers, backend, precision);
-    benchmarkRnnGradients(iterations, layerSize, miniBatchSize, timesteps, layers, backend, precision);
+    // benchmarkRnnReverse(  iterations, layerSize, miniBatchSize, timesteps, layers, backend, precision);
+    // benchmarkRnnGradients(iterations, layerSize, miniBatchSize, timesteps, layers, backend, precision);
 }
 
 prnn::RecurrentLayerBackend getBackend(const std::string& backend){
@@ -225,24 +227,25 @@ int main(int argc, char** argv) {
 
     prnn::matrix::Precision precision = prnn::matrix::SinglePrecision();
 
-    size_t iterations     = 40;
-    size_t layerSize      = prnn::rnn::getMaximumSizeRNNForThisGPU(precision);
-    size_t miniBatcheSize = 6;
-    size_t timesteps      = 64;
+    size_t iterations     = 10;
+    size_t layerSize      = 640;
+    size_t miniBatchSize  = 20;
+    size_t timesteps      = 40;
     size_t layers         = 1;
-
     std::string backend = "persistent";
+    
+    std::cout<<"Layer size : "<<prnn::rnn::getMaximumSizeRNNForThisGPU(precision)<<std::endl;
 
     parser.parse("-i", "--iterations",      iterations,     iterations,     "Iterations to run each recurrent operation.");
     parser.parse("-l", "--layer-size",      layerSize,      layerSize,      "The size of the recurrent layer.");
-    parser.parse("-b", "--mini-batch-size", miniBatcheSize, miniBatcheSize, "The number of utterances per mini-batch.");
+    parser.parse("-b", "--mini-batch-size", miniBatchSize,  miniBatchSize,  "The number of utterances per mini-batch.");
     parser.parse("-t", "--timesteps",       timesteps,      timesteps,      "The length of each utterance.");
     parser.parse("-l", "--layers",          layers,         layers,         "The number of recurrent layers to stack.");
     parser.parse("-b", "--backend",         backend,        backend,        "The backend to use (persistent, cudnn, best).");
 
     parser.parse();
-
-    prnn::util::enable_log("RecurrentOperations::Detail");
-
-    runBenchmark(iterations, layerSize, miniBatcheSize, timesteps, layers, getBackend(backend), precision);
+    
+    prnn::util::enable_all_logs();
+    // prnn::util::enable_log("RecurrentOperations::Detail");
+    runBenchmark( iterations, layerSize, miniBatchSize, timesteps, layers, getBackend(backend), precision );
 }

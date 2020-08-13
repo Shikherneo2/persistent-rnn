@@ -70,8 +70,6 @@ CUDA_DECORATOR inline void barrier(ThreadGroup g)
         return;
     }
 
-    //assert(false && "Not implemented.");
-
 }
 
 template<typename T>
@@ -84,7 +82,7 @@ CUDA_DECORATOR inline T gather(ThreadGroup g, T value, uint32_t index)
     else if(g.size() <= GroupLevelSize<1>::size())
     {
         #ifdef __CUDA_ARCH__
-        return __shfl(value, index, g.size());
+        return __shfl_sync(value, index, g.size());
         #endif
     }
     else if(g.size() <= GroupLevelSize<2>::size())

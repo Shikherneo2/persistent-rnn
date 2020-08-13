@@ -1,5 +1,6 @@
-benchmark/*
-*/build/*
+**/.vscode/*
+benchmark/build/*
+**/build/*
 .debug_build/*
 .release_build/*
 *.dblite

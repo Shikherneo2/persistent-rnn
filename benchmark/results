@@ -1,0 +1,6 @@
+RNN Forward Propagation: 0.000306796 TFLOPS/s
+RNN Average Kernel Time: 369126 us
+RNN Back Propagation Deltas: 0.000292691 TFLOPS/s
+RNN Average Kernel Time: 386914 us
+RNN Back Propagation Deltas: 3.65939 TFLOPS/s
+RNN Average Kernel Time: 30.9467 us

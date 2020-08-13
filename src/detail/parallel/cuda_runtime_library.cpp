@@ -305,7 +305,7 @@ void CudaRuntimeLibrary::Interface::load()
         #undef DynLink
 
         CudaRuntimeLibrary::cudaSetDevice(
-            util::KnobDatabase::getKnobValue<int>("Cuda::Device", 0));
+            util::KnobDatabase::getKnobValue<int>("Cuda::Device", 1));
 
         CudaRuntimeLibrary::cudaDeviceSetLimit(cudaLimitPrintfFifoSize,
             util::KnobDatabase::getKnobValue<size_t>("Cuda::PrintfFifoBytes", (1 << 24)));

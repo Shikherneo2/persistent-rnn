@@ -10,7 +10,3 @@ export LD_LIBRARY_PATH=/usr/local/ffmpeg_build/lib:/usr/lib/x86_64-linux-gnu:/us
 
 export PRNN_KNOB_FILE=$SCRIPTPATH/config/persistent-rnn.config
 export CUDA_ARCH=sm_75
-
-
-
-

@@ -125,6 +125,7 @@ def add_nvcc_flags(env):
   env.AppendUnique(NVCCFLAGS = '-D CUDA_ARCH_MAJOR=' + get_architecture_major(arch))
   env.AppendUnique(NVCCFLAGS = '-Xcompiler=-Wno-unused-function')
   env.AppendUnique(NVCCFLAGS = '-Xcompiler=-Wno-unused-private-field')
+  # env.AppendUnique(NVCCFLAGS = '-Xptxas="-v"')
   #env.AppendUnique(NVCCFLAGS = '-Xcompiler=-Wno-unused-local-typedef')
 
 def cuda_exists(env):

@@ -1403,7 +1403,7 @@ int main(int argc, char** argv)
     options.specificSample = "0";
     options.skipConnectionScale = 0.5;
 
-    options.backend = "best";
+    options.backend = "persistent";
 
     options.runSweep = true;
 

@@ -19,10 +19,10 @@ def getTools():
     else:
         result = [ 'nvcc', 'default']
 
-    return result;
+    return result
 
 
-OldEnvironment = Environment;
+OldEnvironment = Environment
 
 # this dictionary maps the name of a compiler program to a dictionary mapping the name of
 # a compiler switch of interest to the specific switch implementing the feature

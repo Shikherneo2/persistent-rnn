@@ -44,18 +44,23 @@ public:
     } cudnnStatus_t;
 
     /* CUDNN data type */
-    typedef enum
-    {
-        CUDNN_DATA_FLOAT  = 0,
-        CUDNN_DATA_DOUBLE = 1,
-        CUDNN_DATA_HALF   = 2
-    } cudnnDataType_t;
+    typedef enum {
+			CUDNN_DATA_FLOAT   = 0,
+			CUDNN_DATA_DOUBLE  = 1,
+			CUDNN_DATA_HALF    = 2,
+			CUDNN_DATA_INT8    = 3,
+			CUDNN_DATA_INT32   = 4,
+			CUDNN_DATA_INT8x4  = 5,
+			CUDNN_DATA_UINT8   = 6,
+			CUDNN_DATA_UINT8x4 = 7,
+			CUDNN_DATA_INT8x32 = 8,
+		} cudnnDataType_t;
 
-    typedef enum
-    {
-        CUDNN_TENSOR_NCHW = 0,   /* row major (wStride = 1, hStride = w) */
-        CUDNN_TENSOR_NHWC = 1    /* feature maps interleaved ( cStride = 1 )*/
-    } cudnnTensorFormat_t;
+    typedef enum {
+			CUDNN_TENSOR_NCHW        = 0, /* row major (wStride = 1, hStride = w) */
+			CUDNN_TENSOR_NHWC        = 1, /* feature maps interleaved ( cStride = 1 )*/
+			CUDNN_TENSOR_NCHW_VECT_C = 2, /* each image point is vector of element of C, vector length in data type */
+		} cudnnTensorFormat_t;
 
     /* convolution mode */
     typedef enum

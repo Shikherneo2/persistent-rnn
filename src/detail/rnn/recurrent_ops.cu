@@ -28,26 +28,57 @@ namespace rnn
 
 namespace detail
 {
+	template<RecurrentLayerDirection direction, typename T, size_t sms, size_t smMajor>
+	class TileSelector
+	{
+	public:
+		// index_t StreamingMultiprocessors = 24,
+		//   index_t GridTileRows = 1088,
+		//   index_t GridTileColumns = 1088,
+		//   index_t BlockTileRows = 224,
+		//   index_t BlockTileColumns = 224,
+		//   index_t ThreadTileRows = 14,
+		//   index_t ThreadTileColumns = 14,
+		// typedef TileConfig<24, 1152, 1152, 192, 288, 6, 36, direction, T> TileSize;
 
-template<RecurrentLayerDirection direction, typename T, size_t sms, size_t smMajor>
-class TileSelector
-{
-public:
-    typedef TileConfig<75, 384, 384, 192, 288, 6, 36, direction, T> TileSize;
-    //typedef TileConfig<1, 8, 8, 4, 4, 2, 4, direction, T> TileSize;
-
+		// typedef TileConfig<32, 1024, 1024, 128, 256, 4, 32, direction, T> TileSize;
+		// Launch forward propagation with 32 blocks (32 x 8 threads, in stream 0), each handling 128 activations out of 1024 total, mini batch size 3, timesteps 64
+		
+		// typedef TileConfig<32, 1024, 1024, 64, 512, 1, 32, direction, T> TileSize;
+		// Launch forward propagation with 32 blocks (64 x 16 threads, in stream 0), each handling 128 activations out of 1024 total, mini batch size 3, timesteps 64
+		
+		typedef TileConfig<40, 640, 640, 160, 64, 5, 4, direction, T> TileSize;
+		// Launch forward propagation with 40 blocks (16 x 32 threads, in stream 0), each handling 80 activations out of 640 total, mini batch size 3, timesteps 64
 };
 
-#if CUDA_ARCH_MAJOR == 6
+#if CUDA_ARCH_MAJOR == 7
 
 template<RecurrentLayerDirection direction, typename T>
-class TileSelector<direction, T, 56, 6>
+class TileSelector<direction, T, 46,7>
 {
 public:
-    typedef TileConfig<56, 1792, 1792, 224, 256, 7, 32, direction, T> TileSize;
+    typedef TileConfig<40, 640, 640, 160, 64, 5, 4, direction, T> TileSize;
 };
 
 template<RecurrentLayerDirection direction>
+class TileSelector<direction, float16, 46,7>
+{
+public:
+		typedef TileConfig<40, 640, 640, 160, 64, 5, 4, direction, float16> TileSize;
+};
+
+#endif
+
+//#if CUDA_ARCH_MAJOR == 6
+
+//template<RecurrentLayerDirection direction, typename T>
+//class TileSelector<direction, T, 56, 6>
+//{
+//public:
+//    typedef TileConfig<56, 1792, 1792, 224, 256, 7, 32, direction, T> TileSize;
+//};
+
+/*template<RecurrentLayerDirection direction>
 class TileSelector<direction, float16, 56, 6>
 {
 public:
@@ -66,12 +97,11 @@ public:
 };
 
 #endif
-
+*/
 class TileSizeSelector
 {
 public:
-    TileSizeSelector(size_t major, size_t minor, size_t smCount,
-        const matrix::Precision& precision)
+    TileSizeSelector(size_t major, size_t minor, size_t smCount,const matrix::Precision& precision)
     : streamingMultiprocessorVersionMajor(major),
       streamingMultiprocessorVersionMinor(minor),
       streamingMultiprocessorCount(smCount),
@@ -84,8 +114,18 @@ public:
     size_t getMaximumSize() const
     {
         size_t maxSize = 0;
-
-        if(streamingMultiprocessorVersionMajor == 6 && streamingMultiprocessorCount >= 60)
+		if(streamingMultiprocessorVersionMajor == 7 && streamingMultiprocessorCount >= 46)
+        {
+            if(precision == matrix::HalfPrecision())
+            {
+                maxSize = TileSelector<prnn::RECURRENT_FORWARD, float16, 46,7>::TileSize::MAXIMUM_LAYER_SIZE;
+            }
+            else
+            {
+                maxSize = TileSelector<prnn::RECURRENT_FORWARD, float, 46,7>::TileSize::MAXIMUM_LAYER_SIZE;
+            }
+        }
+        else if(streamingMultiprocessorVersionMajor == 6 && streamingMultiprocessorCount >= 60)
         {
             if(precision == matrix::HalfPrecision())
             {
@@ -105,8 +145,7 @@ public:
         }
         else
         {
-            maxSize = TileSelector<prnn::RECURRENT_FORWARD,
-                float, 1, 0>::TileSize::MAXIMUM_LAYER_SIZE;
+            maxSize = TileSelector<prnn::RECURRENT_FORWARD, float, 1, 0>::TileSize::MAXIMUM_LAYER_SIZE;
         }
 
         util::log("RecurrentOperations") << "major " << streamingMultiprocessorVersionMajor
@@ -119,8 +158,20 @@ public:
     size_t getScratchSize() const
     {
         size_t maxSize = 0;
-
-        if(streamingMultiprocessorVersionMajor == 6 && streamingMultiprocessorCount >= 60)
+				
+		if(streamingMultiprocessorVersionMajor == 7 && streamingMultiprocessorCount >= 46)
+        {
+            if(precision == matrix::HalfPrecision())
+            {
+                maxSize = TileSelector<prnn::RECURRENT_FORWARD, float16, 46,7>::TileSize::EXPANDED_LAYER_SIZE;
+            }
+            else
+            {
+                maxSize = TileSelector<prnn::RECURRENT_FORWARD, float, 46,7>::TileSize::EXPANDED_LAYER_SIZE;
+            }
+        }
+				
+        else if(streamingMultiprocessorVersionMajor == 6 && streamingMultiprocessorCount >= 60)
         {
             if(precision == matrix::HalfPrecision())
             {
@@ -235,8 +286,7 @@ void dispatchForwardPropRecurrent(typename ArchitectureConfig::RealType* activat
 
     cudaStream_t stream = reinterpret_cast<cudaStream_t>(archParameters.handle.stream);
 
-    Synchronizer synchronizer(archParameters.block_count(), stream,
-        getSynchronizerScratch(scratch, archParameters));
+    Synchronizer synchronizer(archParameters.block_count(), stream, getSynchronizerScratch(scratch, archParameters));
 
     typedef typename ArchitectureConfig::TileParameters TileConfig;
 
@@ -248,8 +298,7 @@ void dispatchForwardPropRecurrent(typename ArchitectureConfig::RealType* activat
         PersistentEngineParameters<Config> parameters(config, weights, activations,
             scratch, archParameters.handle.skipConnectionScale, synchronizer);
 
-        forward_prop_recurrent_kernel<<<archParameters.blocks(),
-            archParameters.threads(), 0, stream>>>(parameters);
+        forward_prop_recurrent_kernel<<<archParameters.blocks(), archParameters.threads(), 0, stream>>>(parameters);
 
         synchronizer.check_for_failure();
 
@@ -280,8 +329,17 @@ void forwardPropRecurrent(const matrix::DynamicView& activations,
     int smCount = 0;
 
     getGPUMajorAndMinorVersion(major, minor, smCount);
+		
+	if(major == 7 && smCount >= 46)
+    {
+        typedef typename TileSelector<direction, RealType, 46, 7>::TileSize TileSize;
+        typedef RecurrentArchitectureParameters<RealType, TileSize> ArchParams;
 
-    if(major == 6 && smCount >= 60)
+        ArchParams architectureConfig(handle);
+
+        dispatchForwardPropRecurrent<ActivationFunction, ArchParams>(activationData, weightsData, scratchData, architectureConfig);
+    }
+    else if(major == 6 && smCount >= 60)
     {
         typedef typename TileSelector<direction, RealType, 60, 6>::TileSize TileSize;
         typedef RecurrentArchitectureParameters<RealType, TileSize> ArchParams;
@@ -561,7 +619,17 @@ void backPropDeltasRecurrent(const matrix::DynamicView& deltas,
 
     getGPUMajorAndMinorVersion(major, minor, smCount);
 
-    if(major == 6 && smCount >= 60)
+	if(major == 7 && smCount >= 46)
+    {
+        typedef typename TileSelector<direction, RealType, 46,7>::TileSize TileSize;
+        typedef RecurrentArchitectureParameters<RealType, TileSize> ArchParams;
+
+        ArchParams architectureConfig(handle);
+
+        dispatchBackPropDeltasRecurrent<ActivationFunction, ArchParams>(deltaData,
+            weightsData, activationData, scratchData, architectureConfig);
+		}
+    else if(major == 6 && smCount >= 60)
     {
         typedef typename TileSelector<direction, RealType, 60, 6>::TileSize TileSize;
         typedef RecurrentArchitectureParameters<RealType, TileSize> ArchParams;

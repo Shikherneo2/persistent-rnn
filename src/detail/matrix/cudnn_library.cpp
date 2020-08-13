@@ -193,15 +193,15 @@ void CudnnLibrary::cudnnSetFilter4dDescriptor(cudnnFilterDescriptor_t filterDesc
     }
 }
 
-void CudnnLibrary::cudnnSetFilterNdDescriptor(cudnnFilterDescriptor_t filterDesc,
+void CudnnLibrary::cudnnSetFilterNdDescriptor(
+																	 cudnnFilterDescriptor_t filterDesc,
                                    cudnnDataType_t dataType, // image data type
                                    cudnnTensorFormat_t format,
                                    int dims,
                                    const int sizes[])
 {
     _check();
-		const int ff[] = {384,384};
-    auto status = (*_interface.cudnnSetFilterNdDescriptor)(filterDesc, dataType, format, dims, ff);
+    auto status = (*_interface.cudnnSetFilterNdDescriptor)(filterDesc, dataType, format, dims, sizes);
 
     if(status != CUDNN_STATUS_SUCCESS)
     {
