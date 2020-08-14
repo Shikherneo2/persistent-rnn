@@ -1,4 +1,3 @@
-
 // Persistent RNN Includes
 #include <prnn/detail/rnn/recurrent_ops.h>
 
@@ -28,43 +27,43 @@ namespace rnn
 
 namespace detail
 {
-	template<RecurrentLayerDirection direction, typename T, size_t sms, size_t smMajor>
-	class TileSelector
-	{
-	public:
-		// index_t StreamingMultiprocessors = 24,
-		//   index_t GridTileRows = 1088,
-		//   index_t GridTileColumns = 1088,
-		//   index_t BlockTileRows = 224,
-		//   index_t BlockTileColumns = 224,
-		//   index_t ThreadTileRows = 14,
-		//   index_t ThreadTileColumns = 14,
-		// typedef TileConfig<24, 1152, 1152, 192, 288, 6, 36, direction, T> TileSize;
 
-		// typedef TileConfig<32, 1024, 1024, 128, 256, 4, 32, direction, T> TileSize;
-		// Launch forward propagation with 32 blocks (32 x 8 threads, in stream 0), each handling 128 activations out of 1024 total, mini batch size 3, timesteps 64
-		
-		// typedef TileConfig<32, 1024, 1024, 64, 512, 1, 32, direction, T> TileSize;
-		// Launch forward propagation with 32 blocks (64 x 16 threads, in stream 0), each handling 128 activations out of 1024 total, mini batch size 3, timesteps 64
-		
-		typedef TileConfig<40, 640, 640, 160, 64, 5, 4, direction, T> TileSize;
-		// Launch forward propagation with 40 blocks (16 x 32 threads, in stream 0), each handling 80 activations out of 640 total, mini batch size 3, timesteps 64
+template<RecurrentLayerDirection direction, typename T, size_t sms, size_t smMajor>
+class TileSelector{
+public:
+    // typedef TileConfig<24, 1152, 1152, 192, 288, 6, 36, direction, T> TileSize;
+    // (32x8)
+    // typedef TileConfig<32, 1024, 1024, 128, 256, 4, 32, direction, T> TileSize; //0.00346326 TFLOPS
+    // Launch forward propagation with 32 blocks (32 x 8 threads, in stream 0), each handling 128 activations out of 1024 total, mini batch size 3, timesteps 64
+    
+    // typedef TileConfig<32, 1024, 1024, 1024, 32, 1, 32, direction, T> TileSize; //0.00447191 TFLOPS/s
+    // (1024*1)
+
+    typedef TileConfig<32, 1024, 1024, 512, 128, 4, 16, direction, T> TileSize;
+    // typedef TileConfig<32, 1024, 1024, 64, 512, 1, 32, direction, T> TileSize;
+    // Launch forward propagation with 32 blocks (64 x 16 threads, in stream 0), each handling 128 activations out of 1024 total, mini batch size 3, timesteps 64
+    
+    // typedef TileConfig<40, 640, 640, 160, 64, 5, 4, direction, T> TileSize;
+    // typedef TileConfig<40, 640, 640, 80, 128, 5, 4, direction, T> TileSize;
+    // Launch forward propagation with 40 blocks (16 x 32 threads, in stream 0), each handling 80 activations out of 640 total, mini batch size 3, timesteps 64
 };
 
 #if CUDA_ARCH_MAJOR == 7
 
 template<RecurrentLayerDirection direction, typename T>
-class TileSelector<direction, T, 46,7>
-{
+class TileSelector<direction, T, 46, 7>{
+
 public:
-    typedef TileConfig<40, 640, 640, 160, 64, 5, 4, direction, T> TileSize;
+    typedef TileConfig<32, 1024, 1024, 1024, 32, 1, 32, direction, T> TileSize;
+
 };
 
 template<RecurrentLayerDirection direction>
-class TileSelector<direction, float16, 46,7>
-{
+class TileSelector<direction, float16, 46, 7>{
+
 public:
-		typedef TileConfig<40, 640, 640, 160, 64, 5, 4, direction, float16> TileSize;
+    typedef TileConfig<32, 1024, 1024, 1024, 32, 1, 32, direction, float16> TileSize;
+
 };
 
 #endif
@@ -98,6 +97,7 @@ public:
 
 #endif
 */
+
 class TileSizeSelector
 {
 public:
@@ -111,40 +111,31 @@ public:
     }
 
 public:
-    size_t getMaximumSize() const
-    {
+    size_t getMaximumSize() const{
         size_t maxSize = 0;
-		if(streamingMultiprocessorVersionMajor == 7 && streamingMultiprocessorCount >= 46)
-        {
-            if(precision == matrix::HalfPrecision())
-            {
+		if(streamingMultiprocessorVersionMajor == 7 && streamingMultiprocessorCount >= 46){
+            if(precision == matrix::HalfPrecision()){
                 maxSize = TileSelector<prnn::RECURRENT_FORWARD, float16, 46,7>::TileSize::MAXIMUM_LAYER_SIZE;
             }
-            else
-            {
+            else{
                 maxSize = TileSelector<prnn::RECURRENT_FORWARD, float, 46,7>::TileSize::MAXIMUM_LAYER_SIZE;
             }
         }
-        else if(streamingMultiprocessorVersionMajor == 6 && streamingMultiprocessorCount >= 60)
-        {
-            if(precision == matrix::HalfPrecision())
-            {
-                maxSize = TileSelector<prnn::RECURRENT_FORWARD,
-                    float16, 56, 6>::TileSize::MAXIMUM_LAYER_SIZE;
+
+        else if(streamingMultiprocessorVersionMajor == 6 && streamingMultiprocessorCount >= 60){
+            if(precision == matrix::HalfPrecision()){
+                maxSize = TileSelector<prnn::RECURRENT_FORWARD, float16, 56, 6>::TileSize::MAXIMUM_LAYER_SIZE;
             }
-            else
-            {
-                maxSize = TileSelector<prnn::RECURRENT_FORWARD,
-                    float, 56, 6>::TileSize::MAXIMUM_LAYER_SIZE;
+            else{
+                maxSize = TileSelector<prnn::RECURRENT_FORWARD, float, 56, 6>::TileSize::MAXIMUM_LAYER_SIZE;
             }
         }
-        else if(streamingMultiprocessorVersionMajor == 5 && streamingMultiprocessorCount >= 24)
-        {
-            maxSize = TileSelector<prnn::RECURRENT_FORWARD,
-                float, 24, 5>::TileSize::MAXIMUM_LAYER_SIZE;
+
+        else if(streamingMultiprocessorVersionMajor == 5 && streamingMultiprocessorCount >= 24){
+            maxSize = TileSelector<prnn::RECURRENT_FORWARD, float, 24, 5>::TileSize::MAXIMUM_LAYER_SIZE;
         }
-        else
-        {
+
+        else{
             maxSize = TileSelector<prnn::RECURRENT_FORWARD, float, 1, 0>::TileSize::MAXIMUM_LAYER_SIZE;
         }
 
@@ -155,42 +146,35 @@ public:
         return maxSize;
     }
 
-    size_t getScratchSize() const
-    {
+    size_t getScratchSize() const{
         size_t maxSize = 0;
 				
-		if(streamingMultiprocessorVersionMajor == 7 && streamingMultiprocessorCount >= 46)
-        {
-            if(precision == matrix::HalfPrecision())
-            {
+		if(streamingMultiprocessorVersionMajor == 7 && streamingMultiprocessorCount >= 46){
+            if(precision == matrix::HalfPrecision()){
                 maxSize = TileSelector<prnn::RECURRENT_FORWARD, float16, 46,7>::TileSize::EXPANDED_LAYER_SIZE;
             }
-            else
-            {
+            else{
                 maxSize = TileSelector<prnn::RECURRENT_FORWARD, float, 46,7>::TileSize::EXPANDED_LAYER_SIZE;
             }
         }
 				
-        else if(streamingMultiprocessorVersionMajor == 6 && streamingMultiprocessorCount >= 60)
-        {
-            if(precision == matrix::HalfPrecision())
-            {
+        else if(streamingMultiprocessorVersionMajor == 6 && streamingMultiprocessorCount >= 60){
+            if(precision == matrix::HalfPrecision()){
                 maxSize = TileSelector<prnn::RECURRENT_FORWARD,
                     float16, 56, 6>::TileSize::EXPANDED_LAYER_SIZE;
             }
-            else
-            {
+            else{
                 maxSize = TileSelector<prnn::RECURRENT_FORWARD,
                     float, 56, 6>::TileSize::EXPANDED_LAYER_SIZE;
             }
         }
-        else if(streamingMultiprocessorVersionMajor == 5 && streamingMultiprocessorCount >= 24)
-        {
+
+        else if(streamingMultiprocessorVersionMajor == 5 && streamingMultiprocessorCount >= 24){
             maxSize = TileSelector<prnn::RECURRENT_FORWARD,
                 float, 24, 5>::TileSize::EXPANDED_LAYER_SIZE;
         }
-        else
-        {
+
+        else{
             maxSize = TileSelector<prnn::RECURRENT_FORWARD,
                 float, 1, 0>::TileSize::EXPANDED_LAYER_SIZE;
         }
@@ -214,23 +198,18 @@ public:
 
 };
 
-void getGPUMajorAndMinorVersion(int& major, int& minor, int& smCount)
-{
-    if(prnn::parallel::isCudaEnabled())
-    {
-        prnn::parallel::CudaRuntimeLibrary::cudaDeviceGetAttribute(&major,
-            prnn::parallel::CudaRuntimeLibrary::cudaDevAttrComputeCapabilityMajor, 0);
-        prnn::parallel::CudaRuntimeLibrary::cudaDeviceGetAttribute(&minor,
-            prnn::parallel::CudaRuntimeLibrary::cudaDevAttrComputeCapabilityMajor, 0);
-        prnn::parallel::CudaRuntimeLibrary::cudaDeviceGetAttribute(&smCount,
-            prnn::parallel::CudaRuntimeLibrary::cudaDevAttrMultiProcessorCount, 0);
+void getGPUMajorAndMinorVersion(int& major, int& minor, int& smCount){
+    if(prnn::parallel::isCudaEnabled()){
+        prnn::parallel::CudaRuntimeLibrary::cudaDeviceGetAttribute( &major, prnn::parallel::CudaRuntimeLibrary::cudaDevAttrComputeCapabilityMajor, 0 );
+        prnn::parallel::CudaRuntimeLibrary::cudaDeviceGetAttribute( &minor, prnn::parallel::CudaRuntimeLibrary::cudaDevAttrComputeCapabilityMajor, 0 );
+        prnn::parallel::CudaRuntimeLibrary::cudaDeviceGetAttribute( &smCount, prnn::parallel::CudaRuntimeLibrary::cudaDevAttrMultiProcessorCount, 0 );
     }
 }
 
 } // namespace detail
 
-size_t getMaximumSizeRNNForThisGPU(const matrix::Precision& precision)
-{
+
+size_t getMaximumSizeRNNForThisGPU(const matrix::Precision& precision){
     int major   = 0;
     int minor   = 0;
     int smCount = 0;
@@ -240,8 +219,7 @@ size_t getMaximumSizeRNNForThisGPU(const matrix::Precision& precision)
     return detail::TileSizeSelector(major, minor, smCount, precision).getMaximumSize();
 }
 
-size_t getScratchSizeRNNForThisGPU(const matrix::Precision& precision)
-{
+size_t getScratchSizeRNNForThisGPU(const matrix::Precision& precision){
     int major   = 0;
     int minor   = 0;
     int smCount = 0;
@@ -250,6 +228,7 @@ size_t getScratchSizeRNNForThisGPU(const matrix::Precision& precision)
 
     return detail::TileSizeSelector(major, minor, smCount, precision).getScratchSize();
 }
+
 
 namespace detail
 {
@@ -321,8 +300,8 @@ void forwardPropRecurrent(const matrix::DynamicView& activations,
     typedef typename T::type RealType;
 
     const RealType* weightsData    = weights.data<RealType>();
-          RealType* activationData = activations.data<RealType>();
-          RealType* scratchData    = scratch.data<RealType>();
+    RealType* activationData = activations.data<RealType>();
+    RealType* scratchData    = scratch.data<RealType>();
 
     int major   = 0;
     int minor   = 0;
@@ -330,8 +309,7 @@ void forwardPropRecurrent(const matrix::DynamicView& activations,
 
     getGPUMajorAndMinorVersion(major, minor, smCount);
 		
-	if(major == 7 && smCount >= 46)
-    {
+	if(major == 7 && smCount >= 46){
         typedef typename TileSelector<direction, RealType, 46, 7>::TileSize TileSize;
         typedef RecurrentArchitectureParameters<RealType, TileSize> ArchParams;
 
@@ -339,8 +317,7 @@ void forwardPropRecurrent(const matrix::DynamicView& activations,
 
         dispatchForwardPropRecurrent<ActivationFunction, ArchParams>(activationData, weightsData, scratchData, architectureConfig);
     }
-    else if(major == 6 && smCount >= 60)
-    {
+    else if(major == 6 && smCount >= 60){
         typedef typename TileSelector<direction, RealType, 60, 6>::TileSize TileSize;
         typedef RecurrentArchitectureParameters<RealType, TileSize> ArchParams;
 
@@ -349,8 +326,7 @@ void forwardPropRecurrent(const matrix::DynamicView& activations,
         dispatchForwardPropRecurrent<ActivationFunction, ArchParams>(activationData, weightsData,
             scratchData, architectureConfig);
     }
-    else if(major == 5 && smCount >= 24)
-    {
+    else if(major == 5 && smCount >= 24){
         typedef typename TileSelector<direction, RealType, 24, 5>::TileSize TileSize;
         typedef RecurrentArchitectureParameters<RealType, TileSize> ArchParams;
 
@@ -359,8 +335,7 @@ void forwardPropRecurrent(const matrix::DynamicView& activations,
         dispatchForwardPropRecurrent<ActivationFunction, ArchParams>(activationData, weightsData,
             scratchData, architectureConfig);
     }
-    else
-    {
+    else{
         typedef typename TileSelector<direction, RealType, 1, 0>::TileSize TileSize;
         typedef RecurrentArchitectureParameters<RealType, TileSize> ArchParams;
 
@@ -479,29 +454,25 @@ void genericForwardPropRecurrent(
     size_t currentTimestep = reversed ? timesteps - 1 : 0;
 
     // Start value
-    auto currentInput = slice(activations, {0, 0, currentTimestep},
-        {layerSize, miniBatchSize, currentTimestep + 1});
+    auto currentInput = slice( activations, {0, 0, currentTimestep}, {layerSize, miniBatchSize, currentTimestep + 1} );
 
     apply(currentInput, currentInput, *handle.activationFunction.forwardOperation);
 
     // Propagate through time
-    for(size_t timestep = 1; timestep < timesteps; ++timestep)
-    {
+    for(size_t timestep = 1; timestep < timesteps; ++timestep){
         currentTimestep = reversed ? timesteps - timestep - 1 : timestep;
 
-        auto nextInput = slice(activations, {0, 0, currentTimestep},
-            {layerSize, miniBatchSize, currentTimestep + 1});
+        auto nextInput = slice(activations, {0, 0, currentTimestep},{layerSize, miniBatchSize, currentTimestep + 1});
 
         auto reshapedNextInput    = reshape(nextInput,    {layerSize, miniBatchSize});
         auto reshapedCurrentInput = reshape(currentInput, {layerSize, miniBatchSize});
 
         gemm(
-            reshapedNextInput,           1.0,
-            weights,              false, 1.0,
+            reshapedNextInput, 1.0,
+            weights, false, 1.0,
             reshapedCurrentInput, false);
 
-        apply(nextInput, currentInput, nextInput,
-            matrix::MultiplyAccumulate(handle.skipConnectionScale));
+        apply( nextInput, currentInput, nextInput, matrix::MultiplyAccumulate(handle.skipConnectionScale) );
 
         currentInput = nextInput;
 
@@ -525,14 +496,12 @@ void forwardPropRecurrent(
 
     auto backend = getBackendThrowOnError(handle, activations.precision());
 
-    if(backend == RECURRENT_CUDNN_BACKEND)
-    {
+    if(backend == RECURRENT_CUDNN_BACKEND){
         parallel::setNotSynchronized();
 
         cudnnForwardPropRecurrent(activations, inputActivations, weights, scratch, reserve, handle);
     }
-    else if(backend == RECURRENT_PERSISTENT_BACKEND)
-    {
+    else if(backend == RECURRENT_PERSISTENT_BACKEND){
         zeros(scratch);
 
         copy(activations, inputActivations);
@@ -540,8 +509,7 @@ void forwardPropRecurrent(
         detail::forwardPropRecurrentOverActivationFunctions(activations,
             reshape(weights, {handle.layerSize, handle.layerSize}), scratch, handle);
     }
-    else
-    {
+    else{
         copy(activations, inputActivations);
 
         detail::genericForwardPropRecurrent(activations,
@@ -1048,4 +1016,3 @@ size_t getBackPropGradientsScratchSize(const RecurrentOpsHandle& handle,
 
 }
 }
-

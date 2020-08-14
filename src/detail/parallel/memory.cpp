@@ -1,5 +1,3 @@
-
-
 // Persistent RNN Includes
 #include <prnn/detail/parallel/memory.h>
 #include <prnn/detail/parallel/cuda_runtime_library.h>
@@ -46,7 +44,3 @@ void free(void* address)
 
 }
 }
-
-
-
-

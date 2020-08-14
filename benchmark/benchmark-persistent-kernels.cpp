@@ -22,6 +22,7 @@
 #include <random>
 #include <iostream>
 
+
 static double getFlopCount(prnn::RecurrentOpsHandle& handle){
     return 2.0 * handle.layerSize * handle.layerSize * handle.miniBatchSize * handle.timesteps;
 }
@@ -83,6 +84,7 @@ void benchmarkRnnForward(size_t iterations, size_t layerSize, size_t miniBatchSi
     std::cout << "RNN Forward Propagation: " << teraflops << " TFLOPS/s\n";
     std::cout << "RNN Average Kernel Time: " << microsecondsPerKernel << " us\n";
 }
+
 
 void benchmarkRnnReverse(size_t iterations, size_t layerSize, size_t miniBatchSize,
     size_t timesteps, size_t layers, prnn::RecurrentLayerBackend backend,
@@ -228,8 +230,8 @@ int main(int argc, char** argv) {
     prnn::matrix::Precision precision = prnn::matrix::SinglePrecision();
 
     size_t iterations     = 10;
-    size_t layerSize      = 640;
-    size_t miniBatchSize  = 20;
+    size_t layerSize      = 1024;
+    size_t miniBatchSize  = 6;
     size_t timesteps      = 40;
     size_t layers         = 1;
     std::string backend = "persistent";

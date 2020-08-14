@@ -16,20 +16,18 @@ typedef int32_t index_t;
 typedef prnn::types::float16 float16;
 typedef prnn::RecurrentLayerDirection RecurrentLayerDirection;
 
-__device__ constexpr index_t align(index_t address, index_t alignment)
-{
+__device__ constexpr index_t align(index_t address, index_t alignment){
     return address % alignment == 0 ? address : address + alignment - address % alignment;
 }
 
-__device__ constexpr index_t get_max(index_t l, index_t r)
-{
+__device__ constexpr index_t get_max(index_t l, index_t r){
     return l < r ? r : l;
 }
 
-__device__ constexpr index_t get_min(index_t left, index_t right)
-{
+__device__ constexpr index_t get_min(index_t left, index_t right){
     return left < right ? left : right;
 }
+
 
 template<
     index_t StreamingMultiprocessors = 24,
@@ -85,8 +83,7 @@ public:
     };
 
     enum {
-        BLOCKS_PER_SM = (BLOCKS_PER_GRID + STREAMING_MULTIPROCESSORS - 1) /
-            STREAMING_MULTIPROCESSORS
+        BLOCKS_PER_SM = (BLOCKS_PER_GRID + STREAMING_MULTIPROCESSORS - 1) / STREAMING_MULTIPROCESSORS
     };
 
     enum {
@@ -132,13 +129,11 @@ __device__ constexpr index_t get_next_power_of_two(
             ;
 }
 
-__device__ constexpr index_t get_log2(index_t n, index_t p = 0)
-{
+__device__ constexpr index_t get_log2(index_t n, index_t p = 0){
     return (n <= 1) ? p : get_log2(n / 2, p + 1);
 }
 
-__device__ constexpr index_t evenly_divisible(index_t n, index_t d)
-{
+__device__ constexpr index_t evenly_divisible(index_t n, index_t d){
     return n % d == 0 ? d : evenly_divisible(n, d/2);
 }
 
@@ -285,11 +280,13 @@ public:
         COMPRESSED_THREADS_PER_BLOCK = THREADS_PER_BLOCK / CACHE_LINE_USAGE
     };
 
+    // (16+4-1)/4 = 4 for float, 8 for fp16
     enum {
-        VALUES_PER_SHARED_LOAD = ((16 + sizeof(RealType) - 1) / sizeof(RealType))
+        VALUES_PER_SHARED_LOAD = ((8 + sizeof(RealType) - 1) / sizeof(RealType))
     };
 
     enum {
+        // 4/4 = 1
         THREAD_TILE_COLUMN_SEGMENTS = THREAD_TILE_COLUMNS / VALUES_PER_SHARED_LOAD,
         THREAD_TILE_COLUMN_SEGMENT_REMAINDER = THREAD_TILE_COLUMNS % VALUES_PER_SHARED_LOAD
     };
@@ -299,20 +296,16 @@ public:
     };
 
     enum {
-        UNALIGNED_GLOBAL_VALUES_PER_THREAD = (BLOCK_TILE_ROWS + EXPANDED_BLOCK_TILE_COLUMNS +
-            THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK,
+        UNALIGNED_GLOBAL_VALUES_PER_THREAD = (BLOCK_TILE_ROWS + EXPANDED_BLOCK_TILE_COLUMNS + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK,
         GLOBAL_VALUES_PER_THREAD = align(UNALIGNED_GLOBAL_VALUES_PER_THREAD, VALUES_PER_SHARED_LOAD),
         USEFUL_GLOBAL_VALUES_PER_THREAD = GLOBAL_VALUES_PER_THREAD / CACHE_LINE_USAGE
     };
 
-    static_assert(THREAD_TILE_COLUMN_SEGMENT_REMAINDER == 0,
-        "No support for thread tiles that are not evenly divisible by the shared load size yet.");
+    static_assert(THREAD_TILE_COLUMN_SEGMENT_REMAINDER == 0, "No support for thread tiles that are not evenly divisible by the shared load size yet.");
 
-    static_assert(GRID_TILE_ROWS % GLOBAL_VALUES_PER_THREAD == 0,
-        "Grid size must be divisible by the minimum load size");
+    static_assert(GRID_TILE_ROWS % GLOBAL_VALUES_PER_THREAD == 0, "Grid size must be divisible by the minimum load size");
 
-    static_assert(GLOBAL_VALUES_PER_THREAD % USEFUL_GLOBAL_VALUES_PER_THREAD == 0,
-        "Global values per thread must be evenly divisible by useful values");
+    static_assert(GLOBAL_VALUES_PER_THREAD % USEFUL_GLOBAL_VALUES_PER_THREAD == 0, "Global values per thread must be evenly divisible by useful values");
 
     enum {
         SHARED_INPUT_BUFFER_SIZE = EXPANDED_BLOCK_TILE_COLUMNS,
@@ -323,8 +316,7 @@ public:
         SHARED_REDUCE_OFFSET = SHARED_INPUT_BUFFER_SIZE + SHARED_OUTPUT_BUFFER_SIZE,
         SHARED_OUTPUT_OFFSET = SHARED_INPUT_BUFFER_SIZE,
         SHARED_INPUT_OFFSET = 0,
-        SHARED_BARRIER_OFFSET = SHARED_INPUT_BUFFER_SIZE + SHARED_OUTPUT_BUFFER_SIZE +
-            THREADS_PER_ROW * BLOCK_TILE_ROWS
+        SHARED_BARRIER_OFFSET = SHARED_INPUT_BUFFER_SIZE + SHARED_OUTPUT_BUFFER_SIZE + THREADS_PER_ROW * BLOCK_TILE_ROWS
     };
 
     enum {
@@ -332,29 +324,22 @@ public:
     };
 
     enum {
-        VALUES_PER_INPUT_SHARED_STORE = get_min((16 + sizeof(RealType) - 1) / sizeof(RealType),
-            USEFUL_GLOBAL_VALUES_PER_THREAD),
-        VALUES_PER_OUTPUT_SHARED_STORE = get_min((16 + sizeof(RealType) - 1) / sizeof(RealType),
-            GLOBAL_VALUES_PER_THREAD)
+        VALUES_PER_INPUT_SHARED_STORE = get_min((16 + sizeof(RealType) - 1) / sizeof(RealType), USEFUL_GLOBAL_VALUES_PER_THREAD),
+        VALUES_PER_OUTPUT_SHARED_STORE = get_min((16 + sizeof(RealType) - 1) / sizeof(RealType), GLOBAL_VALUES_PER_THREAD)
     };
 
     enum {
-        VALUES_PER_GLOBAL_LOAD = get_min(GLOBAL_VALUES_PER_THREAD,
-            (16 + sizeof(RealType) - 1) / sizeof(RealType)),
-        VALUES_PER_GLOBAL_STORE = get_min((16 + sizeof(RealType) - 1) / sizeof(RealType),
-            USEFUL_GLOBAL_VALUES_PER_THREAD),
-        VALUES_PER_ACTIVATION_LOAD = get_min(USEFUL_GLOBAL_VALUES_PER_THREAD,
-            (16 + sizeof(RealType) - 1) / sizeof(RealType))
+        VALUES_PER_GLOBAL_LOAD = get_min(GLOBAL_VALUES_PER_THREAD, (16 + sizeof(RealType) - 1) / sizeof(RealType)),
+        VALUES_PER_GLOBAL_STORE = get_min((16 + sizeof(RealType) - 1) / sizeof(RealType), USEFUL_GLOBAL_VALUES_PER_THREAD),
+        VALUES_PER_ACTIVATION_LOAD = get_min(USEFUL_GLOBAL_VALUES_PER_THREAD, (16 + sizeof(RealType) - 1) / sizeof(RealType))
     };
 
     enum {
-        VALUES_PER_WEIGHT_LOAD = evenly_divisible(THREAD_TILE_ROWS,
-            (16 + sizeof(RealType) - 1) / sizeof(RealType))
+        VALUES_PER_WEIGHT_LOAD = evenly_divisible(THREAD_TILE_ROWS, (16 + sizeof(RealType) - 1) / sizeof(RealType))
     };
 
     enum {
-        VALUES_PER_OUTPUT_SHARED_LOAD = evenly_divisible(THREAD_TILE_ROWS,
-            (16 + sizeof(RealType) - 1) / sizeof(RealType))
+        VALUES_PER_OUTPUT_SHARED_LOAD = evenly_divisible(THREAD_TILE_ROWS, (16 + sizeof(RealType) - 1) / sizeof(RealType))
     };
 
     enum {
@@ -363,12 +348,10 @@ public:
     };
 
     enum {
-        OUTPUTS_PER_THREAD = (BLOCK_TILE_ROWS + THREADS_PER_BLOCK - 1) /
-            THREADS_PER_BLOCK
+        OUTPUTS_PER_THREAD = (BLOCK_TILE_ROWS + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK
     };
 
-    static_assert(INPUT_LOAD_GROUP_SIZE + OUTPUT_LOAD_GROUP_SIZE <= THREADS_PER_BLOCK,
-        "Incorrect load group sizes.");
+    static_assert(INPUT_LOAD_GROUP_SIZE + OUTPUT_LOAD_GROUP_SIZE <= THREADS_PER_BLOCK, "Incorrect load group sizes.");
 
     enum {
         WARP_SIZE = 32
@@ -379,8 +362,7 @@ public:
     };
 
     enum {
-        SHARED_REDUCE_STORE_VALUES_PER_THREAD = evenly_divisible(THREAD_TILE_ROWS,
-            (16 + sizeof(RealType) - 1) / sizeof(RealType))
+        SHARED_REDUCE_STORE_VALUES_PER_THREAD = evenly_divisible(THREAD_TILE_ROWS, (16 + sizeof(RealType) - 1) / sizeof(RealType))
     };
 
     enum {
@@ -388,8 +370,7 @@ public:
     };
 
     enum {
-        THREADS_PER_GLOBAL_REDUCTION = ((GRID_TILE_COLUMNS + BLOCK_TILE_COLUMNS - 1) /
-            BLOCK_TILE_COLUMNS)
+        THREADS_PER_GLOBAL_REDUCTION = ((GRID_TILE_COLUMNS + BLOCK_TILE_COLUMNS - 1) / BLOCK_TILE_COLUMNS)
     };
 
     enum {
@@ -401,8 +382,7 @@ public:
     };
 
     enum {
-        FIXED_POINT_FRACTIONAL_BITS = FIXED_POINT_BITS - FIXED_POINT_COUNTER_BITS -
-            FIXED_POINT_INTEGER_BITS
+        FIXED_POINT_FRACTIONAL_BITS = FIXED_POINT_BITS - FIXED_POINT_COUNTER_BITS - FIXED_POINT_INTEGER_BITS
     };
 
     enum {
@@ -529,9 +509,7 @@ public:
     };
 
 public:
-    RecurrentConfig(ActivationFunction f, RecurrentOpsDeviceHandle handle)
-        : activationFunction(f), handle(handle) {}
-
+    RecurrentConfig(ActivationFunction f, RecurrentOpsDeviceHandle handle) : activationFunction(f), handle(handle) {}
     RecurrentConfig(RecurrentOpsDeviceHandle handle) : handle(handle) {}
 
 public:
@@ -584,16 +562,12 @@ public:
     typedef T RealType;
 
 public:
-    RecurrentArchitectureParameters(RecurrentOpsHandle handle)
-        : handle(handle) {}
+    RecurrentArchitectureParameters(RecurrentOpsHandle handle) : handle(handle) {}
 
 public:
     dim3 blocks() const {
-        int block_rows    = (handle.layerSize + TileParameters::BLOCK_TILE_ROWS    - 1) /
-            TileParameters::BLOCK_TILE_ROWS;
-        int block_columns = (handle.layerSize + TileParameters::BLOCK_TILE_COLUMNS - 1) /
-            TileParameters::BLOCK_TILE_COLUMNS;
-
+        int block_rows    = (handle.layerSize + TileParameters::BLOCK_TILE_ROWS    - 1) / TileParameters::BLOCK_TILE_ROWS;
+        int block_columns = (handle.layerSize + TileParameters::BLOCK_TILE_COLUMNS - 1) / TileParameters::BLOCK_TILE_COLUMNS;
         return dim3(block_rows, block_columns, 1);
     }
 
@@ -633,5 +607,3 @@ public:
 
 }
 }
-
-

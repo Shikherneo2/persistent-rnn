@@ -99,8 +99,7 @@ void CudnnLibrary::cudnnSetTensorNdDescriptor(cudnnTensorDescriptor_t   tensorDe
 {
     _check();
 
-    auto status = (*_interface.cudnnSetTensorNdDescriptor)(tensorDesc,
-        dataType, nbDims, dimA, strideA);
+    auto status = (*_interface.cudnnSetTensorNdDescriptor)( tensorDesc, dataType, nbDims, dimA, strideA );
 
     if(status != CUDNN_STATUS_SUCCESS)
     {
@@ -141,7 +140,7 @@ void CudnnLibrary::cudnnDestroyTensorDescriptor(cudnnTensorDescriptor_t tensorDe
     }
 }
 
-void CudnnLibrary::cudnnTransformTensor(const void*                      alpha,
+void CudnnLibrary::cudnnTransformTensor(const void* alpha,
                              const cudnnTensorDescriptor_t    srcDesc,
                              const void*                      srcData,
                              const void*                      beta,
@@ -194,7 +193,7 @@ void CudnnLibrary::cudnnSetFilter4dDescriptor(cudnnFilterDescriptor_t filterDesc
 }
 
 void CudnnLibrary::cudnnSetFilterNdDescriptor(
-																	 cudnnFilterDescriptor_t filterDesc,
+								   cudnnFilterDescriptor_t filterDesc,
                                    cudnnDataType_t dataType, // image data type
                                    cudnnTensorFormat_t format,
                                    int dims,
@@ -739,38 +738,29 @@ void CudnnLibrary::cudnnDestroyRNNDescriptor(cudnnRNNDescriptor_t rnnDesc)
 }
 
 void CudnnLibrary::cudnnSetRNNDescriptor(cudnnHandle_t handle,
-																				 cudnnRNNDescriptor_t rnnDesc,
+                                         cudnnRNNDescriptor_t rnnDesc,
                                          int hiddenSize,
                                          int numLayers,
                                          cudnnDropoutDescriptor_t dropoutDesc,
                                          cudnnRNNInputMode_t inputMode,
                                          cudnnDirectionMode_t direction,
                                          cudnnRNNMode_t mode,
-																				 int cudnn_algo,
+										 int cudnn_algo,
                                          cudnnDataType_t dataType )
 {
     _check();
 		
-		// cudnn _v5
-    // auto status = (*_interface.cudnnSetRNNDescriptor)(rnnDesc,
-    //                                                   hiddenSize,
-    //                                                   numLayers,
-    //                                                   dropoutDesc,
-    //                                                   inputMode,
-    //                                                   direction,
-    //                                                   mode,
-    //                                                   dataType);
 		// cudnn _v6
 		auto status = (*_interface.cudnnSetRNNDescriptor)(
-																											handle,
-																											rnnDesc,
+                                                      handle,
+                                                      rnnDesc,
                                                       hiddenSize,
                                                       numLayers,
                                                       dropoutDesc,
                                                       inputMode,
                                                       direction,
                                                       mode,
-																											cudnn_algo,
+													  cudnn_algo,
                                                       dataType);
     if(status != CUDNN_STATUS_SUCCESS)
     {
@@ -1187,8 +1177,7 @@ void CudnnLibrary::Interface::load()
             throw std::runtime_error("cudnnCreate failed: " + getErrorString(status));
         }
 
-        util::log("Cudnnlibrary") << " Loaded library '" << libraryName
-            << "' successfully\n";
+        util::log("Cudnnlibrary") << " Loaded library '" << libraryName << "' successfully\n";
     }
     catch(...)
     {

@@ -39,8 +39,3 @@ void synchronize()
 }
 
 }
-
-
-
-
-

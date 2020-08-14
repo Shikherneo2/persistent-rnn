@@ -1,0 +1,12 @@
+40, 640, 640, 160, 64, 5, 4
+(16x32 thread blocks) (X x Y - so 16 columns, 32 rows)
+
+
+THREADS_PER_ROW = BLOCK_TILE_COLUMNS / THREAD_TILE_COLUMNS
+(64/4=16)
+
+thread_column_step = 16 * 4
+
+reduce THREADS_PER_ROW to reduce accumulation
+
+keep GLOBAL_VALUES_PER_THREAD low -- this is the number of times barrier check is done

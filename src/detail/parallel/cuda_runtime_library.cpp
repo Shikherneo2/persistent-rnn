@@ -75,9 +75,6 @@ void* CudaRuntimeLibrary::cudaMalloc(size_t bytes)
             cudaGetErrorString(status));
     }
 
-    //util::log("CudaRuntimeLibrary") << " CUDA allocated memory (address: "
-    //    << address << ", " << bytes << " bytes)\n";
-
     return address;
 }
 
@@ -304,14 +301,11 @@ void CudaRuntimeLibrary::Interface::load()
 
         #undef DynLink
 
-        CudaRuntimeLibrary::cudaSetDevice(
-            util::KnobDatabase::getKnobValue<int>("Cuda::Device", 1));
+        CudaRuntimeLibrary::cudaSetDevice( util::KnobDatabase::getKnobValue<int>("Cuda::Device", 1) );
 
-        CudaRuntimeLibrary::cudaDeviceSetLimit(cudaLimitPrintfFifoSize,
-            util::KnobDatabase::getKnobValue<size_t>("Cuda::PrintfFifoBytes", (1 << 24)));
+        CudaRuntimeLibrary::cudaDeviceSetLimit( cudaLimitPrintfFifoSize, util::KnobDatabase::getKnobValue<size_t>("Cuda::PrintfFifoBytes", (1 << 24)) );
 
-        util::log("CudaRuntimeLibrary") << " Loaded library '" << libraryName
-            << "' successfully\n";
+        util::log("CudaRuntimeLibrary") << " Loaded library '" << libraryName << "' successfully\n";
     }
     catch(...)
     {
@@ -338,6 +332,3 @@ CudaRuntimeLibrary::Interface CudaRuntimeLibrary::_interface;
 }
 
 }
-
-
-

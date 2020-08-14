@@ -1,4 +1,3 @@
-
 // PRNN Includes
 #include <prnn/detail/rnn/cudnn_ops.h>
 
@@ -500,6 +499,3 @@ size_t cudnnGetWeightsEnd(const RecurrentOpsHandle& handle, const matrix::Precis
 }
 
 }
-
-
-

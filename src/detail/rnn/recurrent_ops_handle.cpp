@@ -1,4 +1,3 @@
-
 // Persistent RNN Includes
 #include <prnn/detail/rnn/recurrent_ops_handle.h>
 #include <prnn/detail/rnn/recurrent_ops.h>
@@ -239,6 +238,3 @@ std::string RecurrentOpsHandle::toString() const
 }
 
 }
-
-
-

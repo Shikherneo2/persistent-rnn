@@ -84,8 +84,7 @@ public:
 
         scratch_step_size = Config::EXPANDED_GRID_TILE_ROWS;
 
-        reduction_threads_per_value = (layer_size + Config::BLOCK_TILE_COLUMNS - 1) /
-            Config::BLOCK_TILE_COLUMNS;
+        reduction_threads_per_value = (layer_size + Config::BLOCK_TILE_COLUMNS - 1) / Config::BLOCK_TILE_COLUMNS;
     }
 
     index_t expand_size(index_t size) const {
@@ -178,8 +177,7 @@ private:
     class RegisterState
     {
     public:
-        __device__ RegisterState(const PersistentEngineParameters<Config>& parameters)
-        :
+        __device__ RegisterState(const PersistentEngineParameters<Config>& parameters):
           shared_base(0),
           barrier_success(true),
           should_check_barrier(false),
@@ -193,29 +191,21 @@ private:
           iteration(parameters.first_iteration),
           first_iteration(parameters.first_iteration),
           scratch_step_size(parameters.scratch_step_size),
-          reduction_threads_per_value(parameters.reduction_threads_per_value)
-        {
+          reduction_threads_per_value(parameters.reduction_threads_per_value){
 
             if (Config::DIRECTION == prnn::RECURRENT_REVERSE) {
-                index_t iteration = parameters.timesteps * parameters.mini_batch_size -
-                    parameters.first_iteration - 1;
+                index_t iteration = parameters.timesteps * parameters.mini_batch_size - parameters.first_iteration - 1;
 
-                back_prop_activation_base_pointer = parameters.back_prop_activations +
-                    iteration * parameters.layer_size;
-                input_base_pointer = parameters.activations +
-                    iteration * parameters.layer_size;
+                back_prop_activation_base_pointer = parameters.back_prop_activations + iteration * parameters.layer_size;
+                input_base_pointer = parameters.activations + iteration * parameters.layer_size;
 
-                activation_scratch = parameters.activation_scratch +
-                    Config::EXPANDED_GRID_TILE_COLUMNS * iteration;
+                activation_scratch = parameters.activation_scratch + Config::EXPANDED_GRID_TILE_COLUMNS * iteration;
             }
             else {
-                back_prop_activation_base_pointer = parameters.back_prop_activations +
-                    parameters.first_iteration * parameters.layer_size;
-                input_base_pointer = parameters.activations +
-                    parameters.first_iteration * parameters.layer_size;
+                back_prop_activation_base_pointer = parameters.back_prop_activations + parameters.first_iteration * parameters.layer_size;
+                input_base_pointer = parameters.activations + parameters.first_iteration * parameters.layer_size;
 
-                activation_scratch = parameters.activation_scratch +
-                    Config::EXPANDED_GRID_TILE_COLUMNS * parameters.first_iteration;
+                activation_scratch = parameters.activation_scratch + Config::EXPANDED_GRID_TILE_COLUMNS * parameters.first_iteration;
             }
         }
 
@@ -257,14 +247,11 @@ private:
     };
 
 public:
-    __device__ PersistentEngine(const PersistentEngineParameters<Config>& parameters)
-    : parameters(parameters), synchronizer(parameters.synchronizer) {
-
+    __device__ PersistentEngine(const PersistentEngineParameters<Config>& parameters) : parameters(parameters), synchronizer(parameters.synchronizer) {
     }
 
 public:
-    __device__ inline void run_forward()
-    {
+    __device__ inline void run_forward() {
         t0printf("Thread (%d, %d, %d, %d) - Starting persistent forward engine on "
             "iteration %d (scratch %p) (acts/deltas %p).\n",
             blockIdx.x, blockIdx.y, threadIdx.x, threadIdx.y, parameters.first_iteration,
@@ -292,21 +279,16 @@ public:
 
         load_weights(weights);
 
-        warm_start(register_state, shared_state, weights, data_buffer, accumulators,
-            output_accumulators);
+        warm_start(register_state, shared_state, weights, data_buffer, accumulators, output_accumulators);
 
-        if(register_state.barrier_success)
-        {
-            for(; register_state.iteration < register_state.iterations; ++register_state.iteration)
-            {
+        if(register_state.barrier_success){
+            for(; register_state.iteration < register_state.iterations; ++register_state.iteration){
                 t0printf("Thread (%d, %d, %d, %d) - Starting iteration %d.\n",
                     blockIdx.x, blockIdx.y, threadIdx.x, threadIdx.y, register_state.iteration);
 
-                perform_iteration(register_state, shared_state, weights, data_buffer, accumulators,
-                    output_accumulators);
+                perform_iteration(register_state, shared_state, weights, data_buffer, accumulators, output_accumulators);
 
-                if(!register_state.barrier_success)
-                {
+                if(!register_state.barrier_success){
                     t0printf("Thread (%d, %d, %d, %d) - Barrier failed, bailing"
                         " out of main loop.\n",
                         blockIdx.x, blockIdx.y, threadIdx.x, threadIdx.y);
@@ -316,14 +298,11 @@ public:
             }
         }
 
-        if(register_state.barrier_success)
-        {
-            clean_up(register_state, shared_state, weights, data_buffer, accumulators,
-                output_accumulators);
+        if(register_state.barrier_success){
+            clean_up(register_state, shared_state, weights, data_buffer, accumulators, output_accumulators);
         }
 
-        if(!register_state.barrier_success)
-        {
+        if(!register_state.barrier_success) {
             t0printf("Thread (%d, %d, %d, %d) - Barrier failed, bailing out of kernel, "
                 "restart at %d.\n",
                 blockIdx.x, blockIdx.y, threadIdx.x, threadIdx.y, register_state.iteration);
@@ -681,8 +660,7 @@ private:
     }
 
 private:
-    __device__ void initialize_shared_state(SharedDataStorage& shared_state)
-    {
+    __device__ void initialize_shared_state(SharedDataStorage& shared_state){
         shared_state.data[Config::SHARED_BARRIER_OFFSET] = 0;
         shared_state.data[Config::SHARED_BUFFER_SIZE + Config::SHARED_BARRIER_OFFSET] = 0;
 
@@ -722,8 +700,7 @@ private:
             index_t compressed_position_in_layer = compress_id(position_in_layer);
 
             index_t local_index   = layer_id * parameters.layer_size + compressed_position_in_layer;
-            index_t scratch_index = layer_id * Config::EXPANDED_GRID_TILE_COLUMNS +
-                position_in_layer;
+            index_t scratch_index = layer_id * Config::EXPANDED_GRID_TILE_COLUMNS + position_in_layer;
 
             bool is_in_range = compressed_position_in_layer < parameters.layer_size;
 
@@ -752,11 +729,8 @@ private:
         index_t id   = thread_id_in_grid();
         index_t size = grid_size();
 
-        auto* deltas_base = parameters.get_deltas() +
-            (parameters.timesteps - 1) * parameters.mini_batch_size * parameters.layer_size;
-        auto* deltas_scratch_base = parameters.get_deltas_scratch() +
-            (parameters.timesteps - 1) * parameters.mini_batch_size *
-            Config::EXPANDED_GRID_TILE_ROWS;
+        auto* deltas_base = parameters.get_deltas() + (parameters.timesteps - 1) * parameters.mini_batch_size * parameters.layer_size;
+        auto* deltas_scratch_base = parameters.get_deltas_scratch() + (parameters.timesteps - 1) * parameters.mini_batch_size * Config::EXPANDED_GRID_TILE_ROWS;
 
         index_t expanded_layer_size = parameters.expanded_layer_size;
 
@@ -803,10 +777,8 @@ private:
 
     __device__ void safe_load_weights(ThreadTileWeights& weights, bool transpose) {
 
-        index_t thread_tile_base_row = threadIdx.x +
-            get_block_id_x() * Config::BLOCK_TILE_ROWS;
-        index_t thread_tile_base_column = threadIdx.y * Config::VALUES_PER_SHARED_LOAD +
-            get_block_id_y() * Config::BLOCK_TILE_COLUMNS;
+        index_t thread_tile_base_row = threadIdx.x + get_block_id_x() * Config::BLOCK_TILE_ROWS;
+        index_t thread_tile_base_column = threadIdx.y * Config::VALUES_PER_SHARED_LOAD + get_block_id_y() * Config::BLOCK_TILE_COLUMNS;
 
         index_t thread_column_step = Config::VALUES_PER_SHARED_LOAD * Config::THREADS_PER_ROW;
 
@@ -830,8 +802,7 @@ private:
 
                     weights.data[row][column] = 0.0;
 
-                    bool is_in_range = current_row < parameters.layer_size &&
-                        current_column < parameters.layer_size;
+                    bool is_in_range = current_row < parameters.layer_size && current_column < parameters.layer_size;
 
                     index_t thread_tile_index = 0;
 
@@ -878,8 +849,7 @@ private:
                 bool is_in_range = current_row < parameters.layer_size &&
                     current_column < parameters.layer_size;
 
-                index_t thread_tile_index = current_row +
-                    current_column * parameters.layer_size;
+                index_t thread_tile_index = current_row + current_column * parameters.layer_size;
 
                 if (is_in_range) {
 
@@ -1035,19 +1005,15 @@ private:
     __device__ void detect_barrier_success(RegisterState& register_state,
         SharedDataStorage& shared_state,
         DataLoadingBuffer& data_buffer,
-        bool is_retry = false)
-    {
+        bool is_retry = false){
         register_state.barrier_success = true;
 
         #if USE_BARRIER
         bool performing_check = register_state.should_check_barrier;
 
         UNROLL
-        for (index_t i = 0; i < Config::GLOBAL_VALUES_PER_THREAD; ++i)
-        {
-            register_state.barrier_success &=
-                (!performing_check) || check_barrier(register_state, data_buffer.data[i], i,
-                    is_retry);
+        for (index_t i = 0; i < Config::GLOBAL_VALUES_PER_THREAD; ++i){
+            register_state.barrier_success &= (!performing_check) || check_barrier(register_state, data_buffer.data[i], i, is_retry);
         }
         #endif
     }
@@ -1293,12 +1259,9 @@ private:
 
         index_t offset = row_offset + threadIdx.y * Config::BLOCK_TILE_ROWS;
 
-        index_t shared_offset = register_state.shared_base +
-            offset + Config::SHARED_REDUCE_OFFSET;
+        index_t shared_offset = register_state.shared_base + offset + Config::SHARED_REDUCE_OFFSET;
 
-        if(row_offset < register_state.layer_size &&
-            threadIdx.y * Config::VALUES_PER_SHARED_LOAD < register_state.layer_size)
-        {
+        if(row_offset < register_state.layer_size && threadIdx.y * Config::VALUES_PER_SHARED_LOAD < register_state.layer_size){
             dprintf("Thread (%d, %d, %d, %d) - Storing accumulator[%d] %f to shared[%d]\n",
                 blockIdx.x, blockIdx.y, threadIdx.x, threadIdx.y,
                 value_offset, (float)accumulator, shared_offset);
@@ -1934,6 +1897,3 @@ __global__ void back_prop_recurrent_deltas_kernel(PersistentEngineParameters<Con
 
 }
 }
-
-
-
